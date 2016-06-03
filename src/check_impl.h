@@ -65,6 +65,7 @@ struct TCase
     List *unch_tflst;
     List *ch_sflst;
     List *ch_tflst;
+    char *tags;
 };
 
 typedef struct TestStats

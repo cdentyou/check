@@ -60,6 +60,7 @@ static void srunner_run_init(SRunner * sr, enum print_output print_mode);
 static void srunner_run_end(SRunner * sr, enum print_output print_mode);
 static void srunner_iterate_suites(SRunner * sr,
                                    const char *sname, const char *tcname,
+				   const char *inc_tags, const char *exc_tags,
                                    enum print_output print_mode);
 static void srunner_iterate_tcase_tfuns(SRunner * sr, TCase * tc);
 static void srunner_add_failure(SRunner * sr, TestResult * tf);
@@ -158,8 +159,50 @@ static void srunner_run_end(SRunner * sr,
     set_fork_status(CK_FORK);
 }
 
+/*
+ * Helper func to compare two lists of tags and return true if there is a
+ * common tag.
+ */
+static unsigned int matching_tag(const char *tags1_orig, const char *tags2_orig)
+{
+
+    char *saveptr1;
+    char *saveptr2;
+    char *tags1;
+    char *tag1;
+    
+
+    if ((tags1_orig == NULL) || (tags2_orig == NULL))
+	return 0;
+
+    tags1 = strdup(tags1_orig);
+    tag1 = strtok_r(tags1, " ", &saveptr1);
+    while (tag1) {
+
+        char *tags2, *tag2;
+
+	tags2 = strdup(tags2_orig);
+	tag2 = strtok_r(tags2, " ", &saveptr2);
+	while (tag2) {
+	    if (strcmp(tag1, tag2) == 0) {
+
+	        free(tags2);
+		free(tags1);
+		return 1;
+	    }
+
+	    tag2 = strtok_r(NULL, " ", &saveptr2);
+	}
+	free(tags2);
+	tag1 = strtok_r(NULL, " ", &saveptr1);
+    }
+    free(tags1);
+    return 0;
+}
+
 static void srunner_iterate_suites(SRunner * sr,
                                    const char *sname, const char *tcname,
+				   const char *inc_tags, const char *exc_tags,
                                    enum print_output CK_ATTRIBUTE_UNUSED
                                    print_mode)
 {
@@ -191,6 +234,14 @@ static void srunner_iterate_suites(SRunner * sr,
             {
                 continue;
             }
+	    if (inc_tags != NULL) {
+		if (!matching_tag(inc_tags, tc->tags))
+		    continue;
+	    }
+	    if (exc_tags != NULL) {
+		if (matching_tag(inc_tags, tc->tags))
+		    continue;
+	    }
 
             srunner_run_tcase(sr, tc);
         }
@@ -738,10 +789,13 @@ void srunner_run_all(SRunner * sr, enum print_output print_mode)
 {
     srunner_run(sr, NULL,       /* All test suites.  */
                 NULL,           /* All test cases.   */
+		NULL,           /* Include all tags  */
+		NULL,           /* Exclude no tags   */
                 print_mode);
 }
 
 void srunner_run(SRunner * sr, const char *sname, const char *tcname,
+		 const char *inc_tags, const char *exc_tags,
                  enum print_output print_mode)
 {
 #if defined(HAVE_SIGACTION) && defined(HAVE_FORK)
@@ -756,7 +810,11 @@ void srunner_run(SRunner * sr, const char *sname, const char *tcname,
     if(!tcname)
         tcname = getenv("CK_RUN_CASE");
     if(!sname)
-        sname = getenv("CK_RUN_SUITE");
+	sname = getenv("CK_RUN_SUITE");
+    if(!inc_tags)
+	inc_tags = getenv("CK_INC_TAGS");
+    if(!exc_tags)
+	exc_tags = getenv("CK_EXC_TAGS");
 
     if(sr == NULL)
         return;
@@ -779,7 +837,7 @@ void srunner_run(SRunner * sr, const char *sname, const char *tcname,
     sigaction(SIGTERM, &sigterm_new_action, &sigterm_old_action);
 #endif /* HAVE_SIGACTION && HAVE_FORK */
     srunner_run_init(sr, print_mode);
-    srunner_iterate_suites(sr, sname, tcname, print_mode);
+    srunner_iterate_suites(sr, sname, tcname, inc_tags, exc_tags, print_mode);
     srunner_run_end(sr, print_mode);
 #if defined(HAVE_SIGACTION) && defined(HAVE_FORK)
     sigaction(SIGALRM, &sigalarm_old_action, NULL);

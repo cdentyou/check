@@ -170,6 +170,23 @@ CK_DLL_EXP void CK_EXPORT suite_add_tcase(Suite * s, TCase * tc);
 CK_DLL_EXP TCase *CK_EXPORT tcase_create(const char *name);
 
 /**
+ * Create a test case associated with certain tags.
+ *
+ * Once created, tests can be added with the tcase_add_test()
+ * function, and the test case assigned to a suite with the
+ * suite_add_tcase() function.
+ *
+ * @param name name of the test case
+ * @param tags string containing arbitrary tags separated by spaces
+ *
+ * @return test case containing no tests
+ *
+ * @since 0.11.0
+ * */
+CK_DLL_EXP TCase *CK_EXPORT tcase_create_tagged(const char *name,
+						const char *tags);
+
+/**
  * Add a test function to a test case
  *
  * @param tc test case to add test to
@@ -980,6 +997,7 @@ CK_DLL_EXP void CK_EXPORT srunner_run_all(SRunner * sr,
  */
 CK_DLL_EXP void CK_EXPORT srunner_run(SRunner * sr, const char *sname,
                                       const char *tcname,
+				      const char *inc_tags, const char *exc_tags,
                                       enum print_output print_mode);
 
 

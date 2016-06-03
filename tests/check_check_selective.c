@@ -100,6 +100,8 @@ START_TEST(test_srunner_run_run_all)
   srunner_run (sr,
                NULL, /* NULL tsuite name.  */
                NULL, /* NULL tcase name.  */
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
 
   ck_assert_msg (srunner_ntests_run(sr) == 3,
@@ -116,6 +118,8 @@ START_TEST(test_srunner_run_suite)
   srunner_run (sr,
                "suite1",
                NULL,  /* NULL tcase name.  */
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
 
   ck_assert_msg (test_tc11_executed 
@@ -134,6 +138,8 @@ START_TEST(test_srunner_run_no_suite)
   srunner_run (sr,
                "non-existing-suite",
                NULL, /* NULL tcase name. */
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
   
   ck_assert_msg (!(test_tc11_executed
@@ -152,6 +158,8 @@ START_TEST(test_srunner_run_tcase)
   srunner_run (sr,
                NULL,  /* NULL suite name.  */
                "tcase12",
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
 
   ck_assert_msg (!test_tc11_executed
@@ -170,6 +178,8 @@ START_TEST(test_srunner_no_tcase)
   srunner_run (sr,
                NULL,  /* NULL suite name.  */
                "non-existant-test-case",
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
 
   ck_assert_msg (!(test_tc11_executed
@@ -188,6 +198,8 @@ START_TEST(test_srunner_suite_tcase)
   srunner_run (sr,
                "suite2",
                "tcase21",
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
   
   ck_assert_msg (!test_tc11_executed
@@ -206,6 +218,8 @@ START_TEST(test_srunner_suite_no_tcase)
   srunner_run (sr,
                "suite1",
                "non-existant-test-case",
+	       NULL, /* include any tags */
+	       NULL, /* exclude no tags  */
                CK_VERBOSE);
 
   ck_assert_msg (!(test_tc11_executed

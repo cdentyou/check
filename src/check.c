@@ -103,6 +103,7 @@ static void suite_free(Suite * s)
     free(s);
 }
 
+
 TCase *tcase_create(const char *name)
 {
     char *env;
@@ -149,7 +150,19 @@ TCase *tcase_create(const char *name)
     tc->ch_sflst = check_list_create();
     tc->unch_tflst = check_list_create();
     tc->ch_tflst = check_list_create();
+    tc->tags = NULL;
 
+    return tc;
+}
+
+TCase *tcase_create_tagged(const char *name, const char *tags)
+{
+    TCase *tc;
+
+    tc = tcase_create(name);
+    if ((tc != NULL) && (tags != NULL)) {
+        tc->tags = strdup(tags);
+    }
     return tc;
 }
 
@@ -166,7 +179,10 @@ static void tcase_free(TCase * tc)
     check_list_free(tc->ch_sflst);
     check_list_free(tc->unch_tflst);
     check_list_free(tc->ch_tflst);
-
+    if (tc->tags) {
+        free(tc->tags);
+	tc->tags = NULL;
+    }
     free(tc);
 }
 

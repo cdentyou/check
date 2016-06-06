@@ -65,7 +65,8 @@ struct TCase
     List *unch_tflst;
     List *ch_sflst;
     List *ch_tflst;
-    char *tags;
+    unsigned int num_tags;
+    char **tags;
 };
 
 typedef struct TestStats
@@ -134,5 +135,7 @@ void set_fork_status(enum fork_status fstat);
 enum fork_status cur_fork_status(void);
 
 clockid_t check_get_clockid(void);
+
+unsigned int tcase_matching_tag(TCase *tc, const char *check_for);
 
 #endif /* CHECK_IMPL_H */

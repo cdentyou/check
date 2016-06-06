@@ -151,21 +151,112 @@ TCase *tcase_create(const char *name)
     tc->unch_tflst = check_list_create();
     tc->ch_tflst = check_list_create();
     tc->tags = NULL;
+    tc->num_tags = 0;
 
     return tc;
 }
 
-TCase *tcase_create_tagged(const char *name, const char *tags)
+void tcase_set_tags(TCase * tc, const char *tags_orig)
 {
-    TCase *tc;
+    unsigned int count;
+    char *tags;
+    char *tag;
 
-    tc = tcase_create(name);
-    if ((tc != NULL) && (tags != NULL)) {
-        tc->tags = strdup(tags);
+    /* free any existing tags */
+    if (NULL != tc->tags)
+    {
+	unsigned int i;
+
+	for (i = 0; i < tc->num_tags; i++)
+	{
+	    free(tc->tags[i]);
+	} 
+	free(tc->tags);
+	tc->tags = NULL;
     }
-    return tc;
+    tc->num_tags = 0;
+
+    if (NULL == tags_orig)
+    {
+	return;
+    }
+
+    /* first pass to count the number of tags to be added */
+    tags = strdup(tags_orig);
+    tag = strtok(tags, " ");
+    while (tag)
+    {
+	if (strlen(tag))
+	{
+	    count++;
+	}
+	tag = strtok(NULL, " ");
+    }
+    free(tags);
+
+    if (0 == count)
+    {
+	return;
+    }
+    
+    tc->tags = calloc(count, sizeof(const char *));
+
+    /* second pass to copy new tags */
+    tags = strdup(tags_orig);
+    tag = strtok(tags, " ");
+    while (tag)
+    {
+	if (strlen(tag))
+	{
+	    tc->tags[tc->num_tags++] = strdup(tag); 
+	}
+	tag = strtok(NULL, " ");
+    }
+    free(tags);
 }
 
+int tcase_get_tags(TCase *tc, char *tags, unsigned int max_sz)
+{
+    unsigned int desired_len = 0;
+    unsigned int consumed_len = 0;
+    unsigned int i;
+
+    if (NULL != tc->tags)
+    {
+	for (i = 0; i < tc->num_tags; i++)
+	{
+	    consumed_len = (max_sz >= desired_len) ?
+		desired_len : max_sz;
+
+	    desired_len += snprintf(tags + consumed_len,
+				    max_sz - consumed_len,
+				    "%s ", tc->tags[i]);
+	}
+
+    }
+
+    if (max_sz > 0)
+    {
+	if (desired_len > 0)
+	{
+	    /* if we wrote to tags then remove any trailing space */
+	    consumed_len = (max_sz >= desired_len) ? desired_len : max_sz;
+	    tags[consumed_len - 1] = '\0';
+	}
+	else
+	{
+	    /* otherwise just make sure it is null terminated */
+	    tags[0] = '\0';
+	}
+    }
+
+    /* desired_len should not include trailing space */
+    if (desired_len > 0) 
+    {
+	desired_len--;
+    }
+    return desired_len;
+}
 
 static void tcase_free(TCase * tc)
 {
@@ -179,11 +270,38 @@ static void tcase_free(TCase * tc)
     check_list_free(tc->ch_sflst);
     check_list_free(tc->unch_tflst);
     check_list_free(tc->ch_tflst);
-    if (tc->tags) {
-        free(tc->tags);
-	tc->tags = NULL;
-    }
+    tcase_set_tags(tc, NULL);
     free(tc);
+}
+
+unsigned int tcase_matching_tag(TCase *tc, const char *check_for)
+{
+    char *tags;
+    char *tag;
+
+    if ((NULL == tc->tags) || (NULL == check_for))
+    {
+	return 0;
+    }
+    
+    tags = strdup(check_for);
+
+    tag = strtok(tags, " ");
+    while (NULL != tag)
+    {
+	unsigned int i;
+	for (i = 0; i < tc->num_tags; i++)
+	{
+	    if (0 == strcmp(tc->tags[i], tag))
+	    {
+		return 1;
+	    }
+	}
+	tag = strtok(NULL, " ");
+    }
+    free(tags);
+
+    return 0;
 }
 
 void suite_add_tcase(Suite * s, TCase * tc)

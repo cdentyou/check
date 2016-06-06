@@ -170,22 +170,40 @@ CK_DLL_EXP void CK_EXPORT suite_add_tcase(Suite * s, TCase * tc);
 CK_DLL_EXP TCase *CK_EXPORT tcase_create(const char *name);
 
 /**
- * Create a test case associated with certain tags.
+ * Associate a test case with certain tags.
+ * Replaces any existing tags with the new set.
  *
- * Once created, tests can be added with the tcase_add_test()
- * function, and the test case assigned to a suite with the
- * suite_add_tcase() function.
+ * @param tc the test case
  *
- * @param name name of the test case
  * @param tags string containing arbitrary tags separated by spaces
- *
- * @return test case containing no tests
+ *        This will be copied. Passing NULL clears all tags. 
  *
  * @since 0.11.0
  * */
-CK_DLL_EXP TCase *CK_EXPORT tcase_create_tagged(const char *name,
-						const char *tags);
-
+CK_DLL_EXP void CK_EXPORT tcase_set_tags(TCase * tc,
+					 const char *tags);
+/**
+ * Get tags currently associated with a test case.
+ *
+ * @param tc the test case
+ *
+ * @param tags pointer to array in which to return space separated tag
+ * string.
+ *
+ * @param max_sz maximum size of tags array including null terminator.
+ * If max_sz is passed as 0 then nothing will be  written to tags and it
+ * may not be terminated.
+ *
+ * @return length it would like to have written excluding the
+ * terminating null. NOTE: this may be equal or longer to max_sz, in
+ * which case you know that the returned string truncated. (See
+ * snprintf).
+ *
+ * @since 0.11.0
+ * */
+CK_DLL_EXP int CK_EXPORT tcase_get_tags(TCase * tc,
+					char *tags,
+					unsigned int max_sz);
 /**
  * Add a test function to a test case
  *

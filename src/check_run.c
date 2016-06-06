@@ -159,47 +159,6 @@ static void srunner_run_end(SRunner * sr,
     set_fork_status(CK_FORK);
 }
 
-/*
- * Helper func to compare two lists of tags and return true if there is a
- * common tag.
- */
-static unsigned int matching_tag(const char *tags1_orig, const char *tags2_orig)
-{
-
-    char *saveptr1;
-    char *saveptr2;
-    char *tags1;
-    char *tag1;
-    
-
-    if ((tags1_orig == NULL) || (tags2_orig == NULL))
-	return 0;
-
-    tags1 = strdup(tags1_orig);
-    tag1 = strtok_r(tags1, " ", &saveptr1);
-    while (tag1) {
-
-        char *tags2, *tag2;
-
-	tags2 = strdup(tags2_orig);
-	tag2 = strtok_r(tags2, " ", &saveptr2);
-	while (tag2) {
-	    if (strcmp(tag1, tag2) == 0) {
-
-	        free(tags2);
-		free(tags1);
-		return 1;
-	    }
-
-	    tag2 = strtok_r(NULL, " ", &saveptr2);
-	}
-	free(tags2);
-	tag1 = strtok_r(NULL, " ", &saveptr1);
-    }
-    free(tags1);
-    return 0;
-}
-
 static void srunner_iterate_suites(SRunner * sr,
                                    const char *sname, const char *tcname,
 				   const char *inc_tags, const char *exc_tags,
@@ -234,13 +193,19 @@ static void srunner_iterate_suites(SRunner * sr,
             {
                 continue;
             }
-	    if (inc_tags != NULL) {
-		if (!matching_tag(inc_tags, tc->tags))
+	    if (inc_tags != NULL)
+	    {
+		if (!tcase_matching_tag(tc, inc_tags))
+		{
 		    continue;
+		}
 	    }
-	    if (exc_tags != NULL) {
-		if (matching_tag(inc_tags, tc->tags))
+	    if (exc_tags != NULL)
+	    {
+		if (tcase_matching_tag(tc, exc_tags))
+		{
 		    continue;
+		}
 	    }
 
             srunner_run_tcase(sr, tc);

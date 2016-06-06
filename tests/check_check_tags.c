@@ -26,287 +26,596 @@
 #include <assert.h>
 #include "check_check.h"
 
-/* from check_check_master.c */
-#define MAXSTR 300
-char * escape_percent(const char *original, size_t original_size);
+enum {
+    RED,
+    BLUE,
+    PURPLE,
+    YELLOW,
+    BLACK,
+    MAX_TESTS
+} test_ids;
 
+unsigned int test_executed[MAX_TESTS];
+
+static void reset_executed(void)
+{
+    unsigned int i;
+
+    for (i = 0; i < MAX_TESTS; i++)
+    {
+	test_executed[i] = 0;
+    }
+}
 
 START_TEST(red_test1)
 {
-  ck_assert_msg(0, "Red fail");
+    test_executed[RED] = 1;
 }
 END_TEST
 
 START_TEST(blue_test1)
 {
-  ck_assert_msg(0, "Blue fail");
+    test_executed[BLUE] = 1;
 }
 END_TEST
 
 START_TEST(purple_test1)
 {
-  ck_assert_msg(0, "Purple fail");
+    test_executed[PURPLE] = 1;
 }
 END_TEST
 
 START_TEST(yellow_test1)
 {
-  ck_assert_msg(0, "Yellow fail");
+    test_executed[YELLOW] = 1;
 }
 END_TEST
 
 START_TEST(black_test1)
 {
-  ck_assert_msg(0, "Black fail");
+    test_executed[BLACK] = 1;
 }
 END_TEST
 
 
 static Suite *make_tagged_suite(void)
 {
-  Suite *s;
+    Suite *s;
 
-  TCase *red, *blue, *purple, *yellow, *black;
+    TCase *red, *blue, *purple, *yellow, *black;
 
-  s = suite_create("Check Tag Filtering");
+    s = suite_create("Check Tag Filtering");
 
-  red = tcase_create_tagged("Red", "Red");
-  suite_add_tcase (s, red);
-  tcase_add_test(red, red_test1);
+    red = tcase_create("Red");
+    tcase_set_tags(red, "Red");
 
-  blue = tcase_create_tagged("Blue", "Blue");
-  suite_add_tcase (s, blue);
-  tcase_add_test(blue, blue_test1);
+    suite_add_tcase (s, red);
+    tcase_add_test(red, red_test1);
 
-  purple = tcase_create_tagged("Purple", "Red Blue");
-  suite_add_tcase (s, purple);
-  tcase_add_test(purple, purple_test1);
+    blue = tcase_create("Blue");
+    tcase_set_tags(blue, "Blue");
+    suite_add_tcase (s, blue);
+    tcase_add_test(blue, blue_test1);
 
-  yellow = tcase_create_tagged("Yellow", "Yellow");
-  suite_add_tcase (s, yellow);
-  tcase_add_test(yellow, yellow_test1);
+    purple = tcase_create("Purple");
+    tcase_set_tags(purple, "Red Blue");
+    suite_add_tcase (s, purple);
+    tcase_add_test(purple, purple_test1);
 
-  black = tcase_create("Black");
-  suite_add_tcase (s, black);
-  tcase_add_test(black, black_test1);
+    yellow = tcase_create("Yellow");
+    tcase_set_tags(yellow, "Yellow");
+    suite_add_tcase (s, yellow);
+    tcase_add_test(yellow, yellow_test1);
 
-  return s;
+    black = tcase_create("Black");
+    suite_add_tcase (s, black);
+    tcase_add_test(black, black_test1);
+
+    return s;
 }
 
 static   SRunner *sr = NULL;
 
 static void tag_test_setup(void)
 {
-  Suite *s;
+    Suite *s;
 
-  s = make_tagged_suite();;
-  sr = srunner_create(s);
-  srunner_set_fork_status(sr, CK_NOFORK);
-
+    s = make_tagged_suite();
+    sr = srunner_create(s);
+    srunner_set_fork_status(sr, CK_NOFORK);
 }
 
 static void tag_test_teardown (void)
 {
-  srunner_free (sr);
+    srunner_free (sr);
 }
+
+START_TEST(set_get_basic)
+{
+    char ret_str[100];
+    const char *expected_str = "Red Blue Green Yellow";
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    tcase_set_tags(tc, expected_str);
+    ret_val = tcase_get_tags(tc, ret_str, sizeof(ret_str));
+
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(expected_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(expected_str));
+    
+    ck_assert_msg(strcmp(ret_str, expected_str) ==  0,
+	      "Got '%s' instead of '%s'",
+	      ret_str, expected_str);
+} END_TEST;
+
+START_TEST(set_get_empty)
+{
+    char ret_str[100];
+    const char *expected_str = "";
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    tcase_set_tags(tc, expected_str);
+    ret_val = tcase_get_tags(tc, ret_str, sizeof(ret_str));
+
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(expected_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(expected_str));
+    
+    ck_assert_msg(strcmp(ret_str, expected_str) ==  0,
+	      "Got '%s' instead of '%s'",
+	      ret_str, expected_str);
+} END_TEST;
+
+START_TEST(set_get_null)
+{
+    char ret_str[100];
+    const char *expected_str = "";
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    tcase_set_tags(tc, NULL);
+    ret_val = tcase_get_tags(tc, ret_str, sizeof(ret_str));
+
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(expected_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(expected_str));
+    
+    ck_assert_msg(strcmp(ret_str, expected_str) ==  0,
+	      "Got '%s' instead of '%s'",
+	      ret_str, expected_str);
+} END_TEST;
+
+START_TEST(init_get)
+{
+    char ret_str[100];
+    const char *expected_str = "";
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    ret_val = tcase_get_tags(tc, ret_str, sizeof(ret_str));
+
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(expected_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(expected_str));
+    
+    ck_assert_msg(strcmp(ret_str, expected_str) ==  0,
+	      "Got '%s' instead of '%s'",
+	      ret_str, expected_str);
+} END_TEST;
+
+START_TEST(set_get_truncated)
+{
+    char ret_str[10];
+    const char *actual_str = "Red Blue Green Yellow";
+    char *expected_str;
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    tcase_set_tags(tc, actual_str);
+    ret_val = tcase_get_tags(tc, ret_str, sizeof(ret_str));
+    
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(actual_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(actual_str));
+    
+    expected_str = strdup(actual_str);
+    expected_str[sizeof(ret_str) - 1] = '\0';
+
+    ck_assert_msg(strcmp(ret_str, expected_str) ==  0,
+	      "Got '%s' instead of '%s'",
+	      ret_str, expected_str);
+    free(expected_str);
+} END_TEST;
+
+START_TEST(set_get_zero_len)
+{
+    const char *expected_str = "Red Blue Green Yellow";
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    tcase_set_tags(tc, expected_str);
+    ret_val = tcase_get_tags(tc, NULL, 0);
+    
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(expected_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(expected_str));
+    
+} END_TEST;
+
+START_TEST(set_get_two_space)
+{
+    char ret_str[100];
+    const char *actual_str = "Red   Blue Green   Yellow";
+    const char *expected_str = "Red Blue Green Yellow";
+    int ret_val;
+    TCase *tc;
+
+    tc = tcase_create("TC");
+    tcase_set_tags(tc, actual_str);
+    ret_val = tcase_get_tags(tc, ret_str, sizeof(ret_str));
+    
+    ck_assert_msg(ret_val >=  0,
+		  "Got illegal negative return value");
+
+    ck_assert_msg((unsigned int)ret_val == strlen(expected_str),
+	      "Got %d instead of %d for returned tag length",
+	      ret_val, strlen(expected_str));
+    
+    ck_assert_msg(strcmp(ret_str, expected_str) ==  0,
+	      "Got '%s' instead of '%s'",
+	      ret_str, expected_str);
+} END_TEST;
+
 
 /*
  * Show that with no filter we run all the tests
  */
-START_TEST(no_filter)
+START_TEST(null_filter)
 {
-  const char *expected_msgs[5] = { "Red fail",
-				   "Blue fail",
-				   "Purple fail",
-				   "Yellow fail",
-				   "Black fail"};
-  TestResult **tr_fail_array;
-  unsigned int ntests_failed;
-  unsigned int ntests_run;
-  size_t n_expected_msgs;
-  const char *got_msg;
-  unsigned int i;
-  TestResult *tr;
+    reset_executed();
 
+    srunner_run(sr, NULL, NULL, NULL, NULL, CK_VERBOSE);
 
-  n_expected_msgs = sizeof(expected_msgs)/sizeof(expected_msgs[0]);
+    ck_assert(test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(test_executed[YELLOW]);
+    ck_assert(test_executed[BLACK]);
 
-  srunner_run(sr, NULL, NULL, NULL, NULL, CK_VERBOSE);
+    reset_executed();
 
-  ntests_run = srunner_ntests_run(sr);
-  ck_assert_msg(ntests_run == n_expected_msgs,
-		"Did not run expected num tests expected %u but got %u",
-		n_expected_msgs, ntests_run);
-
-  ntests_failed = srunner_ntests_failed(sr);
-  ck_assert_msg(ntests_failed == n_expected_msgs,
-		"Expected to fail %u tests but actually failed %u",
-		n_expected_msgs, ntests_failed);
-
-  tr_fail_array = srunner_failures(sr);
-
-  for (i=0; i < n_expected_msgs; i++) {
-    tr = tr_fail_array[i];
-    got_msg = tr_msg(tr);
-
-    if (strcmp(got_msg, expected_msgs[i]) != 0) {
-      char *emsg;
-      char *tmp = (char *)malloc(MAXSTR);
-      snprintf(tmp, MAXSTR,"Expected %s, got %s",
-               expected_msgs[i], got_msg);
-
-      /*
-       * NOTE: ck_abort_msg() will take the passed string
-       * and feed it to printf. We need to escape any
-       * '%' found, else they will result in odd formatting
-       * in ck_abort_msg().
-       */
-      emsg = escape_percent(tmp, MAXSTR);
-      free(tmp);
-
-      ck_abort_msg(emsg);
-      free(emsg);
-    }
-  }
 } END_TEST
 
-/*
- * Show that we can select just "Yellow" tagged test cases
- */
+START_TEST(inc_nothing)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, "", NULL, CK_VERBOSE);
+
+    ck_assert(!test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(exc_nothing)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, NULL, "", CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(test_executed[YELLOW]);
+    ck_assert(test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(inc_nothing_exc_nothing)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, "", "", CK_VERBOSE);
+
+    ck_assert(!test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
 START_TEST(inc_yellow)
 {
-  const char *expected_msgs[1] = { "Yellow fail" };
-  TestResult **tr_fail_array;
-  unsigned int ntests_failed;
-  unsigned int ntests_run;
-  size_t n_expected_msgs;
-  const char *got_msg;
-  unsigned int i;
-  TestResult *tr;
+    reset_executed();
 
-  n_expected_msgs = sizeof(expected_msgs)/sizeof(expected_msgs[0]);
+    srunner_run(sr, NULL, NULL, "Yellow", NULL, CK_VERBOSE);
 
-  srunner_run(sr, NULL, NULL, "Yellow", NULL, CK_VERBOSE);
+    ck_assert(!test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
 
-  ntests_run = srunner_ntests_run(sr);
-  ck_assert_msg(ntests_run == n_expected_msgs,
-		"Did not run expected num tests expected %u but got %u",
-		n_expected_msgs, ntests_run);
+    reset_executed();
 
-  ntests_failed = srunner_ntests_failed(sr);
-  ck_assert_msg(ntests_failed == n_expected_msgs,
-		"Expected to fail %u tests but actually failed %u",
-		n_expected_msgs, ntests_failed);
-
-  tr_fail_array = srunner_failures(sr);
-
-
-  for (i=0; i < n_expected_msgs; i++) {
-    tr = tr_fail_array[i];
-    got_msg = tr_msg(tr);
-
-    if (strcmp(got_msg, expected_msgs[i]) != 0) {
-      char *emsg;
-      char *tmp = (char *)malloc(MAXSTR);
-      snprintf(tmp, MAXSTR,"Expected %s, got %s",
-               expected_msgs[i], got_msg);
-
-      /*
-       * NOTE: ck_abort_msg() will take the passed string
-       * and feed it to printf. We need to escape any
-       * '%' found, else they will result in odd formatting
-       * in ck_abort_msg().
-       */
-      emsg = escape_percent(tmp, MAXSTR);
-      free(tmp);
-
-      ck_abort_msg(emsg);
-      free(emsg);
-    }
-  }
 } END_TEST
 
-/*
- * Show that selecting "Red" tagged test cases gives us red and purple
- */
+
 START_TEST(inc_red)
 {
-  const char *expected_msgs[2] = { "Red fail", "Purple fail" };
-  TestResult **tr_fail_array;
-  unsigned int ntests_failed;
-  unsigned int ntests_run;
-  size_t n_expected_msgs;
-  const char *got_msg;
-  unsigned int i;
-  TestResult *tr;
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, "Red", NULL, CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(inc_red_blue)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, "Red Blue", NULL, CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(inc_red_blue_yellow)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, "Red Blue Yellow", NULL, CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(exc_yellow)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, NULL, "Yellow", CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(exc_red)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, NULL, "Red", CK_VERBOSE);
+
+    ck_assert(!test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(test_executed[YELLOW]);
+    ck_assert(test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(exc_red_blue)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, NULL, "Red Blue", CK_VERBOSE);
+
+    ck_assert(!test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(test_executed[YELLOW]);
+    ck_assert(test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(exc_red_blue_yellow)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, NULL, "Red Blue Yellow", CK_VERBOSE);
+
+    ck_assert(!test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
 
 
-  n_expected_msgs = sizeof(expected_msgs)/sizeof(expected_msgs[0]);
+START_TEST(inc_red_exc_red)
+{
+    reset_executed();
 
-  srunner_run(sr, NULL, NULL, "Red", NULL, CK_VERBOSE);
-  ntests_run = srunner_ntests_run(sr);
+    srunner_run(sr, NULL, NULL, "Red", "Red", CK_VERBOSE);
 
-  ck_assert_msg(ntests_run == n_expected_msgs,
-		"Expected to run %u tests but actually ran %u",
-		n_expected_msgs, ntests_run);
+    ck_assert(!test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
 
-  ntests_failed = srunner_ntests_failed(sr);
+    reset_executed();
 
-  ck_assert_msg(ntests_failed == n_expected_msgs,
-		"Expected to fail %u tests but actually failed %u",
-		n_expected_msgs, ntests_failed);
+} END_TEST
 
-  tr_fail_array = srunner_failures(sr);
+START_TEST(inc_red_exc_blue)
+{
+    reset_executed();
 
+    srunner_run(sr, NULL, NULL, "Red", "Blue", CK_VERBOSE);
 
-  for (i=0; i < n_expected_msgs; i++) {
-    tr = tr_fail_array[i];
-    got_msg = tr_msg(tr);
+    ck_assert(test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(!test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
 
-    if (strcmp(got_msg, expected_msgs[i]) != 0) {
-      char *emsg;
-      char *tmp = (char *)malloc(MAXSTR);
+    reset_executed();
 
-      snprintf(tmp, MAXSTR,"Expected %s, got %s",
-               expected_msgs[i], got_msg);
+} END_TEST
 
-      /*
-       * NOTE: ck_abort_msg() will take the passed string
-       * and feed it to printf. We need to escape any
-       * '%' found, else they will result in odd formatting
-       * in ck_abort_msg().
-       */
-      emsg = escape_percent(tmp, MAXSTR);
-      free(tmp);
+START_TEST(inc_red_inc_red)
+{
+    reset_executed();
 
-      ck_abort_msg(emsg);
-      free(emsg);
-    }
-  }
+    srunner_run(sr, NULL, NULL, "Red Red Red", NULL, CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(!test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
+
+} END_TEST
+
+START_TEST(inc_w_spaces)
+{
+    reset_executed();
+
+    srunner_run(sr, NULL, NULL, "  Red    Blue ", NULL, CK_VERBOSE);
+
+    ck_assert(test_executed[RED]);
+    ck_assert(test_executed[BLUE]);
+    ck_assert(test_executed[PURPLE]);
+    ck_assert(!test_executed[YELLOW]);
+    ck_assert(!test_executed[BLACK]);
+
+    reset_executed();
 
 } END_TEST
 
 Suite *make_tag_suite(void)
 {
-  TCase *no_filters, *inc_filters, *exc_filters, *inc_exc_filters;
-  Suite *s;
+    TCase *set_get_tags, *no_filters, *inc_filters, *exc_filters;
+    TCase **inc_exc_filters, *strange_filters;
+    Suite *s;
 
-  s = suite_create("Check Tag Filtering");
+    s = suite_create("Check Tag Filtering");
 
-  no_filters = tcase_create("no tag filters");
-  suite_add_tcase (s, no_filters);
-  tcase_add_test(no_filters, no_filter);
-  tcase_add_unchecked_fixture (no_filters,
-                                 tag_test_setup,
-                                 tag_test_teardown);
+    set_get_tags = tcase_create("set/get tag filters");
+    suite_add_tcase (s, set_get_tags);
+    tcase_add_test(set_get_tags, init_get);
+    tcase_add_test(set_get_tags, set_get_basic);
+    tcase_add_test(set_get_tags, set_get_empty);
+    tcase_add_test(set_get_tags, set_get_null);
+    tcase_add_test(set_get_tags, set_get_truncated);
+    tcase_add_test(set_get_tags, set_get_zero_len);  tcase_add_test(inc_filters, inc_red);
+    tcase_add_test(set_get_tags, set_get_two_space);
 
-  inc_filters = tcase_create("include tags");
-  suite_add_tcase (s, inc_filters);
-  tcase_add_test(inc_filters, inc_yellow);
-  tcase_add_test(inc_filters, inc_red);
+    no_filters = tcase_create("no tag filters");
+    suite_add_tcase (s, no_filters);
+    tcase_add_test(no_filters, null_filter);
+    tcase_add_test(no_filters, inc_nothing);
+    tcase_add_test(no_filters, exc_nothing);
+    tcase_add_unchecked_fixture (no_filters,
+				 tag_test_setup,
+				 tag_test_teardown);
 
-  tcase_add_unchecked_fixture (inc_filters,
-                               tag_test_setup,
-                               tag_test_teardown);
-  return s;
+    inc_filters = tcase_create("include tags");
+    suite_add_tcase (s, inc_filters);
+    tcase_add_test(inc_filters, inc_yellow);
+    tcase_add_test(inc_filters, inc_red);
+    tcase_add_test(inc_filters, inc_red_blue);
+    tcase_add_test(inc_filters, inc_red_blue_yellow);
+    tcase_add_unchecked_fixture (inc_filters,
+				 tag_test_setup,
+				 tag_test_teardown);
+
+    exc_filters = tcase_create("exclude tags");
+    suite_add_tcase (s, exc_filters);
+    tcase_add_test(exc_filters, exc_yellow);
+    tcase_add_test(exc_filters, exc_red);
+    tcase_add_test(exc_filters, exc_red_blue);
+    tcase_add_test(exc_filters, exc_red_blue_yellow);
+    tcase_add_unchecked_fixture (exc_filters,
+				 tag_test_setup,
+				 tag_test_teardown);
+
+    inc_exc_filters = tcase_create("include and exclude tags");
+    suite_add_tcase (s, inc_exc_filters);
+    tcase_add_test(inc_exc_filters, inc_nothing_exc_nothing);
+    tcase_add_test(inc_exc_filters, inc_red_exc_blue);
+    tcase_add_test(inc_exc_filters, inc_red_exc_red);
+    tcase_add_unchecked_fixture (inc_exc_filters,
+				 tag_test_setup,
+				 tag_test_teardown);
+
+    strange_filters = tcase_create("strange tag filters");
+    suite_add_tcase (s, strange_filters);
+    tcase_add_test(strange_filters, inc_red_inc_red);
+    tcase_add_test(strange_filters, inc_w_spaces);
+    tcase_add_unchecked_fixture (strange_filters,
+				 tag_test_setup,
+				 tag_test_teardown);
+    return s;
 }
